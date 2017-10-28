@@ -56,7 +56,7 @@ class LineDetectorNode(object):
         self.sub_transform = rospy.Subscriber("~transform", AntiInstagramTransform, self.cbTransform, queue_size=1)
         self.sub_switch = rospy.Subscriber("~switch", BoolStamped, self.cbSwitch, queue_size=1)
 
-        rospy.loginfo("[%s] Initialized (verbose = %s)." %(self.node_name, self.verbose))
+        rospy.loginfo("Jie [%s] Initialized (verbose = %s)." %(self.node_name, self.verbose))
 
         rospy.Timer(rospy.Duration.from_sec(2.0), self.updateParams)
 
@@ -84,12 +84,16 @@ class LineDetectorNode(object):
         if self.verbose and self.pub_edge is None:
             self.pub_edge = rospy.Publisher("~edge", Image, queue_size=1)
             self.pub_colorSegment = rospy.Publisher("~colorSegment", Image, queue_size=1)
+            self.pub_hsv_h = rospy.Publisher("~hsv_h", Image, queue_size=1)
+            self.pub_hsv_s = rospy.Publisher("~hsv_s", Image, queue_size=1)
+            self.pub_hsv_v = rospy.Publisher("~hsv_v", Image, queue_size=1)
 
 
     def cbSwitch(self, switch_msg):
         self.active = switch_msg.data
 
     def cbImage(self, image_msg):
+        self.loginfo('cbImage')
         self.stats.received()
 
         if not self.active:
@@ -118,6 +122,7 @@ class LineDetectorNode(object):
         self.loginfo('%3d:%s' % (self.intermittent_counter, s))
 
     def processImage(self, image_msg):
+        rospy.loginfo("processImage")
         if not self.thread_lock.acquire(False):
             self.stats.skipped()
             # Return immediately if the thread is locked
@@ -130,7 +135,7 @@ class LineDetectorNode(object):
             self.thread_lock.release()
 
     def processImage_(self, image_msg):
-
+        rospy.loginfo("processImage_")
         self.stats.processed()
 
         if self.intermittent_log_now():
@@ -168,7 +173,8 @@ class LineDetectorNode(object):
         tk.completed('corrected')
 
         # Set the image to be detected
-        self.detector.setImage(image_cv_corr)
+        # self.detector.setImage(image_cv_corr)
+        self.detector.setImage(image_cv)
 
         # Detect lines and normals
 
@@ -207,12 +213,22 @@ class LineDetectorNode(object):
         # VISUALIZATION only below
         
         if self.verbose:
+            # hsv
+            hsv_h_msg = self.bridge.cv2_to_imgmsg(self.detector.hsv[:,:,0], 'mono8')
+            hsv_h_msg.header.stamp = image_msg.header.stamp
+            self.pub_hsv_h.publish(hsv_h_msg)
+            hsv_s_msg = self.bridge.cv2_to_imgmsg(self.detector.hsv[:,:,1], 'mono8')
+            hsv_s_msg.header.stamp = image_msg.header.stamp
+            self.pub_hsv_s.publish(hsv_s_msg)            
+            hsv_v_msg = self.bridge.cv2_to_imgmsg(self.detector.hsv[:,:,2], 'mono8')
+            hsv_v_msg.header.stamp = image_msg.header.stamp
+            self.pub_hsv_v.publish(hsv_v_msg)      
 
             # Draw lines and normals
             image_with_lines = np.copy(image_cv_corr)
             drawLines(image_with_lines, white.lines, (0, 0, 0))
             drawLines(image_with_lines, yellow.lines, (255, 0, 0))
-            drawLines(image_with_lines, red.lines, (0, 255, 0))
+            #drawLines(image_with_lines, red.lines, (0, 255, 0))
 
             tk.completed('drawn')
 
@@ -224,7 +240,7 @@ class LineDetectorNode(object):
             tk.completed('pub_image')
 
 #         if self.verbose:
-            colorSegment = color_segment(white.area, red.area, yellow.area) 
+            colorSegment = color_segment(white.area, red.area, yellow.area)
             edge_msg_out = self.bridge.cv2_to_imgmsg(self.detector.edges, "mono8")
             colorSegment_msg_out = self.bridge.cv2_to_imgmsg(colorSegment, "bgr8")
             self.pub_edge.publish(edge_msg_out)

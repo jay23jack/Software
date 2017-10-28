@@ -68,6 +68,10 @@ def color_segment(area_white, area_red, area_yellow):
     res = np.zeros((h,w,3), dtype=np.uint8)
 
     for i, m in enumerate(masks):
+        # if i != 0:
+        #     # white only for debug
+        #     continue
+
         nz = (orig[i] > 0) * 1.0
         assert nz.shape == (h, w), nz.shape
 
