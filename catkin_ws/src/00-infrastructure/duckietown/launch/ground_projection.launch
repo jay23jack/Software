@@ -8,6 +8,7 @@
   	<!-- <arg name="rectify" default="false" doc="If set to true, rectify image before process."/> -->
 	<arg name="view_markers" default="true" doc="should we output markers for rviz?"/>
 	<arg name="only" default="false" doc="Only run the ground_projection part when set to true."/>
+  <arg name="verbose" default="false" />
 
 	<include unless="$(arg only)" file="$(find duckietown)/launch/line_detector.launch">
 		 <arg name="veh" value="$(arg veh)"/>
@@ -15,6 +16,7 @@
 		 <arg name="config" value="$(arg config)"/>
 		 <arg name="param_file_name" value="$(arg param_file_name)"/>
 		 <arg name="live" value="$(arg live)"/>
+		 <arg name="verbose" value="$(arg verbose)"/>
 	</include>
 
 	<include file="$(find ground_projection)/launch/ground_projection.launch">

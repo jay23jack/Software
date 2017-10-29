@@ -93,7 +93,6 @@ class LineDetectorNode(object):
         self.active = switch_msg.data
 
     def cbImage(self, image_msg):
-        self.loginfo('cbImage')
         self.stats.received()
 
         if not self.active:
@@ -122,7 +121,6 @@ class LineDetectorNode(object):
         self.loginfo('%3d:%s' % (self.intermittent_counter, s))
 
     def processImage(self, image_msg):
-        rospy.loginfo("processImage")
         if not self.thread_lock.acquire(False):
             self.stats.skipped()
             # Return immediately if the thread is locked
@@ -135,7 +133,6 @@ class LineDetectorNode(object):
             self.thread_lock.release()
 
     def processImage_(self, image_msg):
-        rospy.loginfo("processImage_")
         self.stats.processed()
 
         if self.intermittent_log_now():
@@ -167,8 +164,9 @@ class LineDetectorNode(object):
         tk.completed('resized')
 
         # apply color correction: AntiInstagram
-        image_cv_corr = self.ai.applyTransform(image_cv)
-        image_cv_corr = cv2.convertScaleAbs(image_cv_corr)
+        # image_cv_corr = self.ai.applyTransform(image_cv)
+        # image_cv_corr = cv2.convertScaleAbs(image_cv_corr)
+        image_cv_corr = image_cv
 
         tk.completed('corrected')
 
